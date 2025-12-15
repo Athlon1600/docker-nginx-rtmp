@@ -1,7 +1,7 @@
 [![Build status](https://github.com/Athlon1600/docker-nginx-rtmp/actions/workflows/docker-build-push.yml/badge.svg)](https://github.com/Athlon1600/docker-nginx-rtmp/actions/workflows/docker-build-push.yml)
 ![Docker Pulls](https://img.shields.io/docker/pulls/athlon1600/nginx-rtmp)
 
-# Nginx with RTMP
+# Nginx with RTMP module
 
 This is a Docker image that contains:
 
