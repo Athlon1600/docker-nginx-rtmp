@@ -1,7 +1,14 @@
 name: Build and push
 
 on:
+  schedule:
+    - cron: "0 6 * * 5"
   workflow_dispatch:
+  push:
+    branches:
+      - master
+    # paths:
+    #   - 'docker/**'
 
 jobs:
   build:
@@ -18,14 +25,29 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build AMD64 image only
+      - name: Build Debian AMD64 image
         run: |
           docker build --file Dockerfile.debian --tag athlon1600/nginx-rtmp:debian .
           docker build --build-arg INSTALL_FFMPEG=true --file Dockerfile.debian --tag athlon1600/nginx-rtmp:debian-ffmpeg .
           docker tag athlon1600/nginx-rtmp:debian-ffmpeg athlon1600/nginx-rtmp:latest
+      
+      - name: Test debian-ffmpeg
+        run: |
+          docker run --pull=never -d --rm --name nginx-test -p 8080:80 -p 1935:1935 athlon1600/nginx-rtmp:debian-ffmpeg
+          sleep 3
+          curl --fail http://127.0.0.1:8080/
+          nc -z 127.0.0.1 1935
+          docker rm --force nginx-test
+
+      - name: Build Alpine AMD64 image
+        run: |
+          docker build --build-arg INSTALL_FFMPEG=true --file Dockerfile.alpine --tag athlon1600/nginx-rtmp:alpine-ffmpeg .
+          docker build --file Dockerfile.alpine --tag athlon1600/nginx-rtmp:alpine .
 
       - name: Push tags created to Docker hub
         run: |
           docker push athlon1600/nginx-rtmp:debian
           docker push athlon1600/nginx-rtmp:debian-ffmpeg
+          docker push athlon1600/nginx-rtmp:alpine
+          docker push athlon1600/nginx-rtmp:alpine-ffmpeg
           docker push athlon1600/nginx-rtmp:latest

@@ -1,17 +1,15 @@
-FROM debian:bookworm-slim AS builder
+FROM alpine:3.16 AS builder
 
-## forked rtmp-module was last updated May 15, 2022
-## Nginx version is from 19 Oct 2022
 ARG NGINX_VERSION=1.22.1
 ARG INSTALL_FFMPEG=false
 
-## meta
+# meta
 LABEL org.opencontainers.image.title="Nginx compiled from source with RTMP module. Optionally installs FFmpeg."
 LABEL org.opencontainers.image.authors="Athlon1600"
 LABEL org.opencontainers.image.source="https://github.com/Athlon1600/docker-nginx-rtmp"
 
-## nginx compile dependencies plus optional stuff useful for debugging
-RUN apt-get update && apt-get install -y build-essential libpcre3 libpcre3-dev libssl-dev curl
+# Build deps and optional tools
+RUN apk add --no-cache build-base pcre-dev openssl-dev zlib-dev curl xz
 
 WORKDIR /tmp/build
 
@@ -28,27 +26,27 @@ RUN if [ "$INSTALL_FFMPEG" = "true" ]; then \
     /tmp/build/download-ffmpeg ; \ 
     fi
 
-FROM debian:bookworm-slim
+FROM alpine:3.16
 
-# only need runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpcre3 \
-    libssl3 \
-    zlib1g \
-    libstdc++6 \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /usr/local/nginx /usr/local/nginx
-
-# ffmpeg may exist there
-COPY --from=builder /usr/local/bin/ /usr/local/bin/
+# Runtime deps only
+RUN apk add --no-cache \
+    pcre \
+    openssl \
+    zlib \
+    libstdc++ \
+    curl
 
 # nginx dirs
 RUN mkdir -p \
     /etc/nginx \
     /var/log/nginx \
     /var/www
+
+# Copy nginx from builder
+COPY --from=builder /usr/local/nginx /usr/local/nginx
+
+# ffmpeg may exist there
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
 # Forward logs to Docker
 RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
@@ -66,5 +64,5 @@ STOPSIGNAL SIGQUIT
 EXPOSE 80
 EXPOSE 1935
 
-# CMD ["sleep", "1d"]
+#CMD ["sleep", "1d"]
 CMD ["/usr/local/nginx/sbin/nginx", "-g", "daemon off;"]

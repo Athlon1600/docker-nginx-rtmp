@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+set -eux
+#set -o pipefail
+
+NGINX_VERSION="${NGINX_VERSION:-1.22.1}"
+
+## Download and extract nginx
+curl -OL https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz
+tar -zxf nginx-${NGINX_VERSION}.tar.gz
+
+## we use this fork instead
+curl -OL "https://github.com/sergey-dryabzhinsky/nginx-rtmp-module/archive/dev.tar.gz"
+tar -xvz -f "dev.tar.gz" 
+cd nginx-${NGINX_VERSION} || exit 1
+
+./configure \
+    --prefix=/usr/local/nginx \
+    --conf-path=/etc/nginx/nginx.conf \
+    --http-log-path=/var/log/nginx/access.log \
+    --error-log-path=/var/log/nginx/error.log \
+    --without-http_gzip_module \
+    --with-http_ssl_module \
+    --with-http_v2_module \
+    --with-debug \
+    --with-threads \
+    --with-ipv6 \
+    --add-module=../nginx-rtmp-module-dev && \
+make -j$(nproc) && \
+make install
