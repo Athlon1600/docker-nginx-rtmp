@@ -3,77 +3,56 @@
 
 # Nginx with RTMP module
 
-This is a Docker image that contains:
+This repository contains multiple Docker images that basically contain:
 
 - Nginx version 1.22.1 (compiled from source)
-- RTMP module (https://github.com/sergey-dryabzhinsky/nginx-rtmp-module)
+- with RTMP module (https://github.com/sergey-dryabzhinsky/nginx-rtmp-module)
 - FFmpeg (optional)
 
-```shell
-nginx version: nginx/1.22.1
-built by gcc 12.2.0 (Debian 12.2.0-14+deb12u1) 
-built with OpenSSL 3.0.17 1 Jul 2025
-TLS SNI support enabled
-configure arguments: --prefix=/usr/local/nginx --conf-path=/usr/local/nginx/conf/nginx.conf --http-log-path=/var/log/nginx/access.log --error-log-path=/var/log/nginx/error.log --without-http_gzip_module --with-http_ssl_module --with-http_v2_module --with-debug --with-threads --with-ipv6 --add-module=../nginx-rtmp-module-dev
-```
+This specialized version of Nginx is very useful with anything to do with video livestreaming.
+See what you can do with it in the examples folder.
 
-```shell
-ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers
-built with gcc 8 (Debian 8.3.0-6)
-configuration: --enable-gpl --enable-version3 --enable-static --disable-debug --disable-ffplay --disable-indev=sndio --disable-outdev=sndio --cc=gcc --enable-fontconfig --enable-frei0r --enable-gnutls --enable-gmp --enable-libgme --enable-gray --enable-libaom --enable-libfribidi --enable-libass --enable-libvmaf --enable-libfreetype --enable-libmp3lame --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenjpeg --enable-librubberband --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libvorbis --enable-libopus --enable-libtheora --enable-libvidstab --enable-libvo-amrwbenc --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libdav1d --enable-libxvid --enable-libzvbi --enable-libzimg
-libavutil      59.  8.100 / 59.  8.100
-libavcodec     61.  3.100 / 61.  3.100
-libavformat    61.  1.100 / 61.  1.100
-libavdevice    61.  1.100 / 61.  1.100
-libavfilter    10.  1.100 / 10.  1.100
-libswscale      8.  1.100 /  8.  1.100
-libswresample   5.  1.100 /  5.  1.100
-libpostproc    58.  1.100 / 58.  1.100
-```
+## Contents
 
-More info:
+For now there is just Debian (that uses **glibc** library), and Alpine (**musl libc**). More images can be added later.
 
-- https://github.com/Athlon1600/docker-nginx-rtmp
+| Linux Image               | FFmpeg? | Size     | Pull Command                                          |
+|---------------------------|---------|----------|-------------------------------------------------------|
+| Debian 12 (bookworm:slim) | ❌       | 34.29 MB | ```docker pull athlon1600/nginx-rtmp:debian```        |
+| Debian 12 (bookworm:slim) | ✔️       | 91.82 MB | ```docker pull athlon1600/nginx-rtmp:debian-ffmpeg``` |
+| Alpine 3.16               | ❌       | 7.64 MB  | ```docker pull athlon1600/nginx-rtmp:alpine```        |
+| Alpine 3.16               | ✔️       | 65.17 MB | ```docker pull athlon1600/nginx-rtmp:alpine-ffmpeg``` |
 
-## Usage
+> [!NOTE]  
+> `:latest` tag just maps onto `nginx-rtmp:debian-ffmpeg`
 
-First, pull down the image you want to use. For now, we have only two variants - one with FFmpeg preinstalled, and one
-without.
-
-- athlon1600/nginx-rtmp:debian
-- athlon1600/nginx-rtmp:debian-ffmpeg
-- athlon1600/nginx-rtmp:latest points to `debian-ffmpeg`
+so these two commands are identical:
 
 ```shell
 docker pull athlon1600/nginx-rtmp:latest
+docker pull athlon1600/nginx-rtmp:debian-ffmpeg
 ```
 
-And then, you can either run it straight out of the box using the default `nginx.conf` file:
 
-- https://github.com/Athlon1600/docker-nginx-rtmp/blob/master/nginx.conf
+## Usage
+
+Pull down the image of your liking, and then you can either run it straight out of the box using the default `nginx.conf` file:
 
 ```shell
 docker run --rm -p 80:80 -p 1935:1935 athlon1600/nginx-rtmp:latest
 ```
 
-or you can specify your own custom `nginx.conf`:
+or you can provide your own custom `nginx.conf`:
 
 ```shell
 docker run --rm -p 80:80 -p 1935:1935 -v ${PWD}/nginx.conf:/etc/nginx/nginx.conf:ro athlon1600/nginx-rtmp:latest
 ```
 
-or use this as a base image within your own custom Dockerfile:
+See examples directory for more ideas.
 
-```dockerfile
-FROM athlon1600/nginx-rtmp:latest
-COPY nginx.conf /etc/nginx/nginx.conf
+## :heavy_check_mark: To-do List
 
-EXPOSE 80
-EXPOSE 1935
+- [ ] Provide additional Docker images that use RTMP module forks other than one from @sergey-dryabzhinsky
+- [ ] Build linux/arm64 architecture variant
+- [ ] More Dockerfiles that include ffmpeg builds optimized to use hardware encoding
 
-CMD ["/usr/local/nginx/sbin/nginx", "-g", "daemon off;"]
-```
-
-## To-do list
-
-- provide Alpine variant
