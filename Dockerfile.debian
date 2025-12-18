@@ -20,15 +20,9 @@ COPY scripts/build-nginx /tmp/build/build-nginx
 RUN chmod +x /tmp/build/build-nginx && \
     NGINX_VERSION=$NGINX_VERSION /tmp/build/build-nginx
 
-# Optionally download ffmpeg, but copy this file always
-COPY scripts/download-ffmpeg /tmp/build/download-ffmpeg
-
-RUN if [ "$INSTALL_FFMPEG" = "true" ]; then \
-    chmod +x /tmp/build/download-ffmpeg && \
-    /tmp/build/download-ffmpeg ; \ 
-    fi
-
 FROM debian:bookworm-slim
+
+ARG INSTALL_FFMPEG=false
 
 # only need runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -36,13 +30,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl3 \
     zlib1g \
     libstdc++6 \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+    curl && \
+    if [ "$INSTALL_FFMPEG" = "true" ]; then \
+    apt-get install -y --no-install-recommends ffmpeg; \
+    fi && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/local/nginx /usr/local/nginx
-
-# ffmpeg may exist there
-COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
 # nginx dirs
 RUN mkdir -p \
