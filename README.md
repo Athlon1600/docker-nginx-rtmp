@@ -3,18 +3,20 @@
 
 # Nginx with RTMP module
 
-This repository contains multiple Docker images that basically contain:
+This repository contains everything needed to build the **nginx-rtmp** Docker image, which includes:
 
 - Nginx version 1.22.1 (compiled from source)
 - with RTMP module (https://github.com/sergey-dryabzhinsky/nginx-rtmp-module)
 - FFmpeg (optional)
 
-This specialized version of Nginx is very useful with anything to do with video livestreaming.
-See what you can do with it in the examples folder.
+This specialized build of Nginx is very useful when it comes to building anything livestreaming related, given that RTMP is still the most popular protocol for streaming video in real-time.
 
-## Contents
+## Docker Images
 
-For now there is just Debian (that uses **glibc** library), and Alpine (**musl libc**). More images can be added later.
+See the Docker hub page here:
+- https://hub.docker.com/r/athlon1600/nginx-rtmp
+
+For now there is just Debian (that uses **glibc** library), and Alpine (**musl libc**).
 
 | Linux Image               | FFmpeg? | Size     | Pull Command                                          |
 |---------------------------|---------|----------|-------------------------------------------------------|
@@ -33,10 +35,9 @@ docker pull athlon1600/nginx-rtmp:latest
 docker pull athlon1600/nginx-rtmp:debian-ffmpeg
 ```
 
-
 ## Usage
 
-Pull down the image of your liking, and then you can either run it straight out of the box using the default `nginx.conf` file:
+You can either run it straight out of the box using the default `nginx.conf` file:
 
 ```shell
 docker run --rm -p 80:80 -p 1935:1935 athlon1600/nginx-rtmp:latest
@@ -45,10 +46,58 @@ docker run --rm -p 80:80 -p 1935:1935 athlon1600/nginx-rtmp:latest
 or you can provide your own custom `nginx.conf`:
 
 ```shell
+## PowerShell
 docker run --rm -p 80:80 -p 1935:1935 -v ${PWD}/nginx.conf:/etc/nginx/nginx.conf:ro athlon1600/nginx-rtmp:latest
+
+## Windows CMD
+docker run --rm -p 80:80 -p 1935:1935 -v %cd%/nginx.conf:/etc/nginx/nginx.conf:ro athlon1600/nginx-rtmp:latest
+
+## Linux/macOS
+docker run --rm -p 80:80 -p 1935:1935 -v $(pwd)/nginx.conf:/etc/nginx/nginx.conf:ro athlon1600/nginx-rtmp:latest
 ```
 
-See examples directory for more ideas.
+To see a complete reference of all the new Nginx directives you can use, 
+go here:
+- https://github.com/arut/nginx-rtmp-module/wiki/Directives
+
+## Examples
+
+Clone this repository:
+
+```shell
+git clone https://github.com/Athlon1600/docker-nginx-rtmp.git
+cd docker-nginx-rtmp
+```
+
+and then look inside `examples` folder:
+
+- [RTMP to HTTP Live Streaming](examples/hls-basic/)
+- [Multistreaming to multiple platform at once](examples/multistream/)
+
+## :warning: Security
+
+Before deploying to production, make sure access rules inside `nginx.conf`
+and in other places are not too permissible. For example:
+
+```nginx
+## This lets ANYONE stream to your server
+allow publish all;
+
+## A better alternative
+allow publish YOUR_IP_GOES_HERE;
+deny publish all;
+```
+
+Otherwise, you can just block unknown traffic at a network level instead:
+
+```shell
+# allow RTMP connections from your IP only
+iptables -A INPUT -p tcp --dport 1935 -s 203.0.113.10 -j ACCEPT
+
+# drop everything else
+iptables -A INPUT -p tcp --dport 1935 -j DROP
+```
+
 
 ## :heavy_check_mark: To-do List
 
